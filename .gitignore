@@ -4,3 +4,4 @@ backup/
 .stationary.data.json
 .readme.md
 .env
+.backup/
