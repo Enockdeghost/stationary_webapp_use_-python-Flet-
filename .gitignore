@@ -2,3 +2,5 @@
 __pycache__/
 backup/
 .stationary.data.json
+.readme.md
+.env
