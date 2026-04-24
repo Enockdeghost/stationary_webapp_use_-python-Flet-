@@ -1,4 +1,3 @@
-# ui/pages/settings_page.py
 import flet as ft
 import os
 import shutil

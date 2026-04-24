@@ -1,4 +1,3 @@
-# ui/app.py
 import flet as ft
 
 from config import get_setting, set_setting, MOBILE_BREAKPOINT, UserRole, currency_symbol
@@ -32,78 +31,64 @@ class StationeryApp(ft.Container):
     def _build_ui(self):
         is_admin = (self.role == UserRole.ADMIN)
 
-        # ── All navigation destinations (full list) ──────────────────────
         full_dest_pairs = [
-            (ft.Icons.DASHBOARD,       "Dashboard",       0),
-            (ft.Icons.INVENTORY_2,     "Inventory",       1),
-            (ft.Icons.POINT_OF_SALE,   "Sales",           2),
-            (ft.Icons.HISTORY,         "History",         3),
-            (ft.Icons.ANALYTICS,       "Reports",         4),
+            ("Dashboard",  ft.Icons.DASHBOARD,       0),
+            ("Inventory",  ft.Icons.INVENTORY_2,     1),
+            ("Sales",      ft.Icons.POINT_OF_SALE,   2),
+            ("History",    ft.Icons.HISTORY,         3),
+            ("Reports",    ft.Icons.ANALYTICS,       4),
         ]
         if is_admin:
             full_dest_pairs += [
-                (ft.Icons.TUNE,                   "Stock Adj.",      5),
-                (ft.Icons.ACCOUNT_BALANCE_WALLET, "Expenses",       6),
-                (ft.Icons.LOCAL_OFFER,            "Promos",         7),
-                (ft.Icons.LOCAL_SHIPPING,         "Suppliers",      8),
-                (ft.Icons.SHOPPING_CART,          "Purchasing",     9),
-                (ft.Icons.GROUP,                  "Customers",      10),
-                (ft.Icons.PEOPLE,                 "Users",          11),
-                (ft.Icons.SETTINGS,               "Settings",       12),
+                ("Stock Adj.",    ft.Icons.TUNE,                   5),
+                ("Expenses",      ft.Icons.ACCOUNT_BALANCE_WALLET, 6),
+                ("Promos",        ft.Icons.LOCAL_OFFER,            7),
+                ("Suppliers",     ft.Icons.LOCAL_SHIPPING,         8),
+                ("Purchasing",    ft.Icons.SHOPPING_CART,          9),
+                ("Customers",     ft.Icons.GROUP,                  10),
+                ("Users",         ft.Icons.PEOPLE,                 11),
+                ("Settings",      ft.Icons.SETTINGS,               12),
             ]
 
-        # ── Bottom bar destinations (only 5) ─────────────────────────────
         bottom_pairs = [
-            (ft.Icons.DASHBOARD,    "Dashboard"),
-            (ft.Icons.INVENTORY_2,  "Inventory"),
-            (ft.Icons.POINT_OF_SALE,"Sales"),
-            (ft.Icons.HISTORY,      "History"),
-            (ft.Icons.ANALYTICS,    "Reports"),
+            ("Dashboard", ft.Icons.DASHBOARD),
+            ("Inventory", ft.Icons.INVENTORY_2),
+            ("Sales",     ft.Icons.POINT_OF_SALE),
+            ("History",   ft.Icons.HISTORY),
+            ("Reports",   ft.Icons.ANALYTICS),
         ]
 
-        # ── Hamburger drawer (will be assigned to page later) ────────────
-        self.drawer = ft.NavigationDrawer(
-            controls=[
-                ft.Container(
-                    content=ft.Text("Menu", size=20, weight=ft.FontWeight.BOLD),
-                    padding=ft.padding.only(left=16, top=16, bottom=8),
-                ),
-                ft.Divider(),
-                *[
-                    ft.NavigationDrawerDestination(
-                        icon=icon,
-                        label=label,
-                        data=str(index),
-                    )
-                    for icon, label, index in full_dest_pairs
-                ],
-            ],
-            on_change=self._on_drawer_change,
-        )
+        menu_items = []
+        for label, icon, index in full_dest_pairs:
+            menu_items.append(
+                ft.PopupMenuItem(
+                    content=ft.Text(label),
+                    icon=icon,
+                    on_click=lambda e, idx=index: self.navigate_to(idx),
+                )
+            )
 
-        # ── Bottom navigation bar (5 items) ──────────────────────────────
         self.nav_bar = ft.NavigationBar(
             selected_index=0,
             bgcolor=ft.Colors.SURFACE,
             destinations=[
                 ft.NavigationBarDestination(icon=icon, label=label)
-                for icon, label in bottom_pairs
+                for label, icon in bottom_pairs
             ],
             on_change=self._on_bottom_bar_change,
         )
 
-        # ── Dark mode switch ──────────────────────────────────────────────
         self.dark_mode_switch = ft.Switch(
             value=get_setting("dark_mode", "false") == "true",
             on_change=self.toggle_dark_mode,
             label="Dark",
         )
 
-        # ── Top bar with hamburger ───────────────────────────────────────
-        self.hamburger_btn = ft.IconButton(
+        self.hamburger_btn = ft.PopupMenuButton(
             icon=ft.Icons.MENU,
-            on_click=self._open_drawer,
+            items=menu_items,
         )
+
         top_bar_content = ft.Row([
             self.hamburger_btn,
             ft.Text(get_setting("store_name", "Uptown Stationery"),
@@ -131,7 +116,6 @@ class StationeryApp(ft.Container):
             border=ft.Border.only(bottom=ft.BorderSide(1, ft.Colors.GREY_300)),
         )
 
-        # ── Content area ─────────────────────────────────────────────────
         self.content_area = ft.Container(expand=True, padding=16, content=ft.Text("Loading…"))
         self.content = ft.Column([
             self.top_bar,
@@ -139,29 +123,9 @@ class StationeryApp(ft.Container):
             self.nav_bar,
         ], expand=True, spacing=0)
 
-        # ── Put it all on the page ───────────────────────────────────────
-        self._page.add(self.content)   # add the main container to page
         self._page.on_resize = self.on_page_resize
-
-        # 🔧 Assign drawer AFTER the main UI is on the page
-        self._page.drawer = self.drawer
-        self._page.update()
-
-        # Navigate to dashboard
         self.navigate_to(0)
 
-    # ── Drawer open / close ──────────────────────────────────────────────
-    def _open_drawer(self, e):
-        """Show the hamburger drawer."""
-        self.drawer.open = True
-        self._page.update()
-
-    def _close_drawer(self):
-        """Hide the drawer."""
-        self.drawer.open = False
-        self._page.update()
-
-    # ── Layout helpers ───────────────────────────────────────────────────
     @property
     def _is_mobile(self) -> bool:
         return bool(self._page and self._page.width and self._page.width < MOBILE_BREAKPOINT)
@@ -169,7 +133,6 @@ class StationeryApp(ft.Container):
     def update_layout(self):
         if not self._page:
             return
-        # Rebuild the content with correct layout if needed
         self.content.controls = [
             self.top_bar,
             self.content_area,
@@ -180,7 +143,6 @@ class StationeryApp(ft.Container):
     def on_page_resize(self, e):
         self.update_layout()
 
-    # ── Navigation logic ─────────────────────────────────────────────────
     def navigate_to(self, index: int):
         self.nav_bar.selected_index = index if index < 5 else -1
         self._set_page_content(index)
@@ -219,17 +181,10 @@ class StationeryApp(ft.Container):
         self.content_area.content = content
         self._page.update()
 
-    def _on_drawer_change(self, e):
-        if e.control.selected_index is not None:
-            idx = int(e.control.selected_index.data)
-            self._close_drawer()
-            self.navigate_to(idx)
-
     def _on_bottom_bar_change(self, e):
         bottom_index = int(e.data) if e.data else 0
         self.navigate_to(bottom_index)
 
-    # ── Other UI callbacks ───────────────────────────────────────────────
     def snack(self, msg: str, color=ft.Colors.GREEN_700):
         if not self._page:
             return
@@ -254,17 +209,14 @@ class StationeryApp(ft.Container):
         )))
         self._page.update()
 
-    # ─── PO dialog bridge ────────────────────────────────────────────────
     def open_purchase_order_dialog(self, prefill=None):
         purchasing = PurchasingPage(self)
         purchasing._open_po_dialog(prefill=prefill)
 
 
 def build_app(page: ft.Page) -> ft.Control:
-    # build_app now returns None because StationeryApp adds itself to the page.
-    # We must return the login page initially.
     return LoginPage(lambda uid, uname, role: (
         page.clean(),
-        StationeryApp(page, uid, uname, role),  # This adds itself to page
+        page.add(StationeryApp(page, uid, uname, role)),
         page.update(),
     ))

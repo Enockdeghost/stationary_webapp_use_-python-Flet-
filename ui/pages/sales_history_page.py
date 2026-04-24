@@ -1,4 +1,3 @@
-# ui/pages/sales_history_page.py
 import flet as ft
 import csv
 from datetime import datetime, timedelta

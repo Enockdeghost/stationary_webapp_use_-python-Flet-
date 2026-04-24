@@ -1,4 +1,3 @@
-# ui/pages/login_page.py
 import flet as ft
 import time
 

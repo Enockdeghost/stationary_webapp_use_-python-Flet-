@@ -1,4 +1,3 @@
-# ui/pages/dashboard_page.py
 import flet as ft
 import flet_charts as fch
 from datetime import datetime
@@ -9,27 +8,22 @@ from ui.pages.base_page import BasePage
 
 
 class _T:
-    BLUE        = "#1D4ED8"
-    BLUE_LIGHT  = "#DBEAFE"
-    GREEN       = "#059669"
-    GREEN_LIGHT = "#D1FAE5"
-    AMBER       = "#D97706"
-    AMBER_LIGHT = "#FEF3C7"
-    RED         = "#DC2626"
-    RED_LIGHT   = "#FEE2E2"
-    INDIGO      = "#4F46E5"
-    INDIGO_LIGHT= "#EEF2FF"
-    SURFACE     = "#FFFFFF"
-    BORDER      = "#E2E8F0"
-    TEXT_PRI    = "#0F172A"
-    TEXT_SEC    = "#64748B"
-    TEXT_MUTED  = "#94A3B8"
+    BLUE        = ft.Colors.BLUE_700
+    BLUE_LIGHT  = ft.Colors.BLUE_50
+    GREEN       = ft.Colors.GREEN_700
+    GREEN_LIGHT = ft.Colors.GREEN_50
+    AMBER       = ft.Colors.AMBER_700
+    AMBER_LIGHT = ft.Colors.AMBER_50
+    RED         = ft.Colors.RED_700
+    RED_LIGHT   = ft.Colors.RED_50
+    INDIGO      = ft.Colors.INDIGO_700
+    INDIGO_LIGHT= ft.Colors.INDIGO_50
     CHART_COLORS = ["#1D4ED8","#059669","#D97706","#4F46E5","#0EA5E9"]
     RADIUS = 12
 
 
 def _divider(opacity: float = 1.0):
-    return ft.Divider(height=1, color=ft.Colors.with_opacity(opacity, _T.BORDER))
+    return ft.Divider(height=1, color=ft.Colors.with_opacity(opacity, ft.Colors.OUTLINE))
 
 
 def _card(content: ft.Control, padding: int = 20) -> ft.Container:
@@ -38,19 +32,19 @@ def _card(content: ft.Control, padding: int = 20) -> ft.Container:
             content=content,
             padding=padding,
             border_radius=_T.RADIUS,
-            bgcolor=_T.SURFACE,
+            bgcolor=ft.Colors.SURFACE,
         ),
         shadow=ft.BoxShadow(
             blur_radius=8,
             spread_radius=0,
-            color=ft.Colors.with_opacity(0.08, "#000000"),
+            color=ft.Colors.with_opacity(0.15, ft.Colors.SHADOW),
             offset=ft.Offset(0, 2),
         ),
         border_radius=_T.RADIUS,
     )
 
 
-def _badge(text: str, bg: str, fg: str = "#FFFFFF") -> ft.Container:
+def _badge(text: str, bg: str, fg: str = ft.Colors.WHITE) -> ft.Container:
     return ft.Container(
         content=ft.Text(text, size=10, color=fg, weight=ft.FontWeight.W_700),
         bgcolor=bg,
@@ -150,18 +144,32 @@ class DashboardPage(BasePage):
         )
         today_str = datetime.now().strftime("%A, %d %B %Y")
         left = ft.Column([
-            ft.Text(f"{greeting}, {self.username}", size=26, weight=ft.FontWeight.BOLD, color=_T.TEXT_PRI),
-            ft.Text(today_str, size=13, color=_T.TEXT_SEC, weight=ft.FontWeight.W_400),
+            ft.Text(
+                f"{greeting}, {self.username}",
+                size=26, weight=ft.FontWeight.BOLD,
+                color=ft.Colors.ON_SURFACE,
+            ),
+            ft.Text(
+                today_str,
+                size=13, color=ft.Colors.ON_SURFACE_VARIANT,
+                weight=ft.FontWeight.W_400,
+            ),
         ], spacing=2, tight=True)
+
         right = ft.Container(
             content=ft.Row([
-                ft.Container(width=8, height=8, bgcolor=_T.GREEN, border_radius=4),
+                ft.Container(
+                    width=8, height=8,
+                    bgcolor=_T.GREEN,
+                    border_radius=4,
+                ),
                 ft.Text("Live data", size=12, color=_T.GREEN, weight=ft.FontWeight.W_600),
             ], spacing=6),
             bgcolor=_T.GREEN_LIGHT,
             border_radius=20,
             padding=ft.padding.symmetric(horizontal=14, vertical=7),
         )
+
         return ft.Row(
             controls=[left, right],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -202,11 +210,13 @@ class DashboardPage(BasePage):
                         ),
                     ]),
                     ft.Container(height=8),
-                    ft.Text(value, size=22, weight=ft.FontWeight.BOLD, color=_T.TEXT_PRI),
-                    ft.Text(title, size=12, color=_T.TEXT_SEC, weight=ft.FontWeight.W_600),
-                    ft.Text(sub, size=10, color=_T.TEXT_MUTED),
+                    ft.Text(value, size=22, weight=ft.FontWeight.BOLD,
+                            color=ft.Colors.ON_SURFACE),
+                    ft.Text(title, size=12, color=ft.Colors.ON_SURFACE_VARIANT,
+                            weight=ft.FontWeight.W_600),
+                    ft.Text(sub, size=10, color=ft.Colors.ON_SURFACE_VARIANT),
                 ], spacing=2, tight=True),
-                bgcolor=_T.SURFACE,
+                bgcolor=ft.Colors.SURFACE,
                 padding=ft.padding.all(16),
                 border=ft.Border(left=ft.BorderSide(4, accent)),
                 border_radius=ft.BorderRadius(
@@ -217,7 +227,7 @@ class DashboardPage(BasePage):
             shadow=ft.BoxShadow(
                 blur_radius=8,
                 spread_radius=0,
-                color=ft.Colors.with_opacity(0.08, "#000000"),
+                color=ft.Colors.with_opacity(0.15, ft.Colors.SHADOW),
                 offset=ft.Offset(0, 2),
             ),
             border_radius=_T.RADIUS,
@@ -226,7 +236,7 @@ class DashboardPage(BasePage):
     def _build_line_chart(self, daily_data, sym):
         if not daily_data:
             return _card(ft.Container(
-                ft.Text("No sales data", color=_T.TEXT_MUTED, size=13),
+                ft.Text("No sales data", color=ft.Colors.ON_SURFACE_VARIANT, size=13),
                 alignment=ft.Alignment(0, 0),
                 height=160,
             ))
@@ -251,30 +261,32 @@ class DashboardPage(BasePage):
             left_axis=fch.ChartAxis(label_size=40, show_labels=True),
             bottom_axis=fch.ChartAxis(
                 labels=[
-                    fch.ChartAxisLabel(value=i, label=ft.Text(date[-5:], size=10, color=_T.TEXT_SEC))
+                    fch.ChartAxisLabel(value=i, label=ft.Text(date[-5:], size=10,
+                                                              color=ft.Colors.ON_SURFACE_VARIANT))
                     for i, (date, _, _) in enumerate(daily_data)
                 ],
                 label_size=28,
             ),
             horizontal_grid_lines=fch.ChartGridLines(
                 interval=1,
-                color=ft.Colors.with_opacity(0.1, _T.TEXT_PRI),
+                color=ft.Colors.with_opacity(0.15, ft.Colors.ON_SURFACE),
                 width=1,
             ),
-            tooltip=fch.LineChartTooltip(bgcolor=ft.Colors.with_opacity(0.8, "#0F172A")),
+            tooltip=fch.LineChartTooltip(bgcolor=ft.Colors.with_opacity(0.9, ft.Colors.SURFACE_CONTAINER_HIGHEST)),
             min_y=0,
             max_y=max(cnt for _, cnt, _ in daily_data) * 1.3,
             expand=True,
         )
         return _card(ft.Column([
-            ft.Text("Sales Trend (units)", size=14, weight=ft.FontWeight.W_600, color=_T.TEXT_PRI),
+            ft.Text("Sales Trend (units)", size=14, weight=ft.FontWeight.W_600,
+                    color=ft.Colors.ON_SURFACE),
             ft.Container(chart, height=180),
         ], spacing=10))
 
     def _build_bar_chart(self, daily_data, sym):
         if not daily_data:
             return _card(ft.Container(
-                ft.Text("No revenue data", color=_T.TEXT_MUTED, size=13),
+                ft.Text("No revenue data", color=ft.Colors.ON_SURFACE_VARIANT, size=13),
                 alignment=ft.Alignment(0, 0),
                 height=160,
             ))
@@ -303,30 +315,32 @@ class DashboardPage(BasePage):
             left_axis=fch.ChartAxis(label_size=40, show_labels=True),
             bottom_axis=fch.ChartAxis(
                 labels=[
-                    fch.ChartAxisLabel(value=i, label=ft.Text(date[-5:], size=10, color=_T.TEXT_SEC))
+                    fch.ChartAxisLabel(value=i, label=ft.Text(date[-5:], size=10,
+                                                              color=ft.Colors.ON_SURFACE_VARIANT))
                     for i, (date, _, _) in enumerate(daily_data)
                 ],
                 label_size=28,
             ),
             horizontal_grid_lines=fch.ChartGridLines(
                 interval=max_rev / 4,
-                color=ft.Colors.with_opacity(0.1, _T.TEXT_PRI),
+                color=ft.Colors.with_opacity(0.15, ft.Colors.ON_SURFACE),
                 width=1,
             ),
-            tooltip=fch.BarChartTooltip(bgcolor=ft.Colors.with_opacity(0.8, "#0F172A")),
+            tooltip=fch.BarChartTooltip(bgcolor=ft.Colors.with_opacity(0.9, ft.Colors.SURFACE_CONTAINER_HIGHEST)),
             max_y=max_rev * 1.2,
             min_y=0,
             expand=True,
         )
         return _card(ft.Column([
-            ft.Text("Daily Revenue", size=14, weight=ft.FontWeight.W_600, color=_T.TEXT_PRI),
+            ft.Text("Daily Revenue", size=14, weight=ft.FontWeight.W_600,
+                    color=ft.Colors.ON_SURFACE),
             ft.Container(chart, height=180),
         ], spacing=10))
 
     def _build_pie_chart(self, top_products, sym):
         if not top_products:
             return _card(ft.Container(
-                ft.Text("No product data", color=_T.TEXT_MUTED, size=13),
+                ft.Text("No product data", color=ft.Colors.ON_SURFACE_VARIANT, size=13),
                 alignment=ft.Alignment(0, 0),
                 height=160,
             ))
@@ -350,7 +364,8 @@ class DashboardPage(BasePage):
             expand=True,
         )
         return _card(ft.Column([
-            ft.Text("Product Distribution", size=14, weight=ft.FontWeight.W_600, color=_T.TEXT_PRI),
+            ft.Text("Product Distribution", size=14, weight=ft.FontWeight.W_600,
+                    color=ft.Colors.ON_SURFACE),
             ft.Container(chart, height=180),
         ], spacing=10))
 
@@ -368,7 +383,7 @@ class DashboardPage(BasePage):
             return ft.Container(content=_card(ft.Column([
                 header,
                 ft.Container(
-                    ft.Text("No sales yet", color=_T.TEXT_MUTED, size=13),
+                    ft.Text("No sales yet", color=ft.Colors.ON_SURFACE_VARIANT, size=13),
                     alignment=ft.Alignment(0, 0),
                     height=80,
                 ),
@@ -376,12 +391,17 @@ class DashboardPage(BasePage):
 
         col_hdr = ft.Container(
             content=ft.Row([
-                ft.Text("ID", size=10, color=_T.TEXT_MUTED, weight=ft.FontWeight.W_600, width=44),
-                ft.Text("Date", size=10, color=_T.TEXT_MUTED, weight=ft.FontWeight.W_600, expand=True),
-                ft.Text("Customer", size=10, color=_T.TEXT_MUTED, weight=ft.FontWeight.W_600, expand=True),
-                ft.Text("Total", size=10, color=_T.TEXT_MUTED, weight=ft.FontWeight.W_600, width=84,
+                ft.Text("ID", size=10, color=ft.Colors.ON_SURFACE_VARIANT,
+                        weight=ft.FontWeight.W_600, width=44),
+                ft.Text("Date", size=10, color=ft.Colors.ON_SURFACE_VARIANT,
+                        weight=ft.FontWeight.W_600, expand=True),
+                ft.Text("Customer", size=10, color=ft.Colors.ON_SURFACE_VARIANT,
+                        weight=ft.FontWeight.W_600, expand=True),
+                ft.Text("Total", size=10, color=ft.Colors.ON_SURFACE_VARIANT,
+                        weight=ft.FontWeight.W_600, width=84,
                         text_align=ft.TextAlign.RIGHT),
-                ft.Text("Method", size=10, color=_T.TEXT_MUTED, weight=ft.FontWeight.W_600, width=80),
+                ft.Text("Method", size=10, color=ft.Colors.ON_SURFACE_VARIANT,
+                        weight=ft.FontWeight.W_600, width=80),
             ], spacing=8),
             padding=ft.padding.symmetric(horizontal=4, vertical=4),
         )
@@ -395,7 +415,7 @@ class DashboardPage(BasePage):
 
         sale_rows = []
         for i, (sid, sdate, cname, tot, pay) in enumerate(recent_sales):
-            bg = ft.Colors.with_opacity(0.03, _T.TEXT_PRI) if i % 2 == 0 else ft.Colors.TRANSPARENT
+            bg = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE) if i % 2 == 0 else ft.Colors.TRANSPARENT
             sale_rows.append(
                 ft.Container(
                     content=ft.Row([
@@ -408,10 +428,14 @@ class DashboardPage(BasePage):
                             ),
                             on_click=lambda e, s=sid: self._show_sale_details(s),
                         ),
-                        ft.Text((sdate or "")[:16], size=11, color=_T.TEXT_SEC, expand=True),
+                        ft.Text(
+                            (sdate or "")[:16],
+                            size=11, color=ft.Colors.ON_SURFACE_VARIANT, expand=True,
+                        ),
                         ft.Text(
                             cname if len(cname) <= 14 else cname[:12] + "…",
-                            size=11, color=_T.TEXT_PRI, expand=True, weight=ft.FontWeight.W_500,
+                            size=11, color=ft.Colors.ON_SURFACE, expand=True,
+                            weight=ft.FontWeight.W_500,
                         ),
                         ft.Text(
                             f"{sym}{tot:.2f}",
@@ -419,8 +443,12 @@ class DashboardPage(BasePage):
                             width=84, text_align=ft.TextAlign.RIGHT,
                         ),
                         ft.Container(
-                            content=ft.Text(pay or "Cash", size=9, color="#FFFFFF", weight=ft.FontWeight.W_600),
-                            bgcolor=METHOD_COLOR.get(pay or "Cash", _T.TEXT_SEC),
+                            content=ft.Text(
+                                pay or "Cash",
+                                size=9, color=ft.Colors.WHITE,
+                                weight=ft.FontWeight.W_600,
+                            ),
+                            bgcolor=METHOD_COLOR.get(pay or "Cash", _T.BLUE),
                             border_radius=5,
                             padding=ft.padding.symmetric(horizontal=7, vertical=3),
                             width=80,
@@ -452,8 +480,9 @@ class DashboardPage(BasePage):
                 padding=6,
             ),
             ft.Column([
-                ft.Text("Reorder Suggestions", size=13, weight=ft.FontWeight.W_700, color=_T.TEXT_PRI),
-                ft.Text("Items below minimum stock", size=10, color=_T.TEXT_MUTED),
+                ft.Text("Reorder Suggestions", size=13, weight=ft.FontWeight.W_700,
+                        color=ft.Colors.ON_SURFACE),
+                ft.Text("Items below minimum stock", size=10, color=ft.Colors.ON_SURFACE_VARIANT),
             ], spacing=1, tight=True),
         ], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER)
 
@@ -461,7 +490,8 @@ class DashboardPage(BasePage):
             ok = ft.Container(
                 content=ft.Column([
                     ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=36, color=_T.GREEN),
-                    ft.Text("All stock levels are healthy", size=12, color=_T.TEXT_SEC,
+                    ft.Text("All stock levels are healthy", size=12,
+                            color=ft.Colors.ON_SURFACE_VARIANT,
                             text_align=ft.TextAlign.CENTER),
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=8),
                 alignment=ft.Alignment(0, 0),
@@ -475,7 +505,7 @@ class DashboardPage(BasePage):
             urgency = (
                 _T.RED if qty == 0 else
                 _T.AMBER if qty <= threshold // 2 else
-                _T.TEXT_SEC
+                ft.Colors.ON_SURFACE_VARIANT
             )
             item_rows.append(
                 ft.Container(
@@ -483,12 +513,14 @@ class DashboardPage(BasePage):
                         ft.Column([
                             ft.Text(
                                 name if len(name) <= 18 else name[:16] + "…",
-                                size=11, color=_T.TEXT_PRI, weight=ft.FontWeight.W_600,
+                                size=11, color=ft.Colors.ON_SURFACE,
+                                weight=ft.FontWeight.W_600,
                             ),
                             ft.Row([
-                                ft.Text("Stock:", size=9, color=_T.TEXT_MUTED),
+                                ft.Text("Stock:", size=9, color=ft.Colors.ON_SURFACE_VARIANT),
                                 ft.Text(str(qty), size=9, color=urgency, weight=ft.FontWeight.BOLD),
-                                ft.Text(f"/ Min {threshold}", size=9, color=_T.TEXT_MUTED),
+                                ft.Text(f"/ Min {threshold}", size=9,
+                                        color=ft.Colors.ON_SURFACE_VARIANT),
                             ], spacing=3),
                         ], spacing=2, tight=True, expand=True),
                         ft.Container(
@@ -511,7 +543,7 @@ class DashboardPage(BasePage):
                             ),
                         ),
                     ], spacing=6, vertical_alignment=ft.CrossAxisAlignment.CENTER),
-                    bgcolor=ft.Colors.with_opacity(0.025, urgency),
+                    bgcolor=ft.Colors.with_opacity(0.05, urgency),
                     border=ft.Border(left=ft.BorderSide(3, urgency)),
                     border_radius=ft.BorderRadius(
                         top_left=0, bottom_left=0,
@@ -523,12 +555,12 @@ class DashboardPage(BasePage):
 
         bulk_btn = ft.Container(
             content=ft.ElevatedButton(
-                text="Create PO for All",
+                "Create PO for All",
                 icon=ft.Icons.SHOPPING_CART,
                 on_click=self._create_po_from_all_suggestions,
                 style=ft.ButtonStyle(
                     bgcolor=_T.BLUE,
-                    color="#FFFFFF",
+                    color=ft.Colors.WHITE,
                     shape=ft.RoundedRectangleBorder(radius=8),
                     padding=ft.padding.symmetric(horizontal=16, vertical=12),
                     elevation=0,
@@ -551,14 +583,15 @@ class DashboardPage(BasePage):
                 border_radius=7,
                 padding=6,
             ),
-            ft.Text(title, size=13, weight=ft.FontWeight.W_700, color=_T.TEXT_PRI),
+            ft.Text(title, size=13, weight=ft.FontWeight.W_700,
+                    color=ft.Colors.ON_SURFACE),
         ], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER)
 
     def _mini_pill(self, value: str, label: str, accent: str, light: str) -> ft.Container:
         return ft.Container(
             content=ft.Column([
                 ft.Text(value, size=13, weight=ft.FontWeight.BOLD, color=accent),
-                ft.Text(label, size=9, color=_T.TEXT_MUTED),
+                ft.Text(label, size=9, color=ft.Colors.ON_SURFACE_VARIANT),
             ], spacing=1, tight=True),
             bgcolor=light,
             border_radius=8,
@@ -582,9 +615,9 @@ class DashboardPage(BasePage):
 
         detail_rows = [
             ft.DataRow(cells=[
-                ft.DataCell(ft.Text(r["name"], size=12)),
-                ft.DataCell(ft.Text(str(r["quantity"]), size=12)),
-                ft.DataCell(ft.Text(f"{sym}{r['price_at_sale']:.2f}", size=12)),
+                ft.DataCell(ft.Text(r["name"], size=12, color=ft.Colors.ON_SURFACE)),
+                ft.DataCell(ft.Text(str(r["quantity"]), size=12, color=ft.Colors.ON_SURFACE)),
+                ft.DataCell(ft.Text(f"{sym}{r['price_at_sale']:.2f}", size=12, color=ft.Colors.ON_SURFACE)),
                 ft.DataCell(ft.Text(f"{sym}{r['total']:.2f}", size=12,
                                     color=_T.GREEN, weight=ft.FontWeight.W_600)),
             ]) for r in rows
@@ -600,14 +633,15 @@ class DashboardPage(BasePage):
         w = self.dialog_width(580)
         content = ft.Column([
             ft.Row([
-                ft.Text(f"Sale #{sale_id}", size=16, weight=ft.FontWeight.BOLD, color=_T.TEXT_PRI),
+                ft.Text(f"Sale #{sale_id}", size=16, weight=ft.FontWeight.BOLD,
+                        color=ft.Colors.ON_SURFACE),
                 _badge(info["payment_method"] or "Cash", _T.BLUE),
             ], spacing=10, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Text((info["sale_date"] or "")[:16], size=11, color=_T.TEXT_SEC),
+            ft.Text((info["sale_date"] or "")[:16], size=11, color=ft.Colors.ON_SURFACE_VARIANT),
             summary_row,
             _divider(),
             ft.Row([ft.DataTable(
-                columns=[ft.DataColumn(ft.Text(h, size=10, color=_T.TEXT_MUTED))
+                columns=[ft.DataColumn(ft.Text(h, size=10, color=ft.Colors.ON_SURFACE_VARIANT))
                          for h in ("Item", "Qty", "Unit Price", "Total")],
                 rows=detail_rows,
                 data_row_max_height=38,
@@ -616,7 +650,8 @@ class DashboardPage(BasePage):
         ], spacing=12, width=w, height=360, scroll=ft.ScrollMode.AUTO)
 
         dialog = ft.AlertDialog(
-            title=ft.Text("Transaction Details", size=16, weight=ft.FontWeight.BOLD, color=_T.TEXT_PRI),
+            title=ft.Text("Transaction Details", size=16, weight=ft.FontWeight.BOLD,
+                          color=ft.Colors.ON_SURFACE),
             content=content,
             actions=[ft.TextButton("Close", on_click=lambda _: self.close_dialog(dialog),
                                    style=ft.ButtonStyle(color=_T.BLUE))],
