@@ -1,8 +1,8 @@
-# config.py
-import sqlite3
-import os
 
-DB_FILE = "stationery.db"
+import os
+import sqlite3
+
+DB_FILE = os.path.join("data", "stationery.db")
 BACKUP_DIR = "backups"
 MOBILE_BREAKPOINT = 700
 MAX_LOGIN_ATTEMPTS = 5
@@ -30,6 +30,7 @@ class POStatus:
 
 
 def init_db():
+    os.makedirs("data", exist_ok=True)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.executescript("""
