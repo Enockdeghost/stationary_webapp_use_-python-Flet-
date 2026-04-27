@@ -1,7 +1,8 @@
 .main.py
 __pycache__/
 backup/
-.stationary.data.json
+.stationary_data.json
 .readme.md
 .env
 .backup/
+.stationery_data.json

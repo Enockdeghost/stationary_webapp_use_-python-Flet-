@@ -1,4 +1,5 @@
 import flet as ft
+import asyncio
 
 from config import get_setting, set_setting, MOBILE_BREAKPOINT, UserRole, currency_symbol
 from database.connection import fetch_one
@@ -26,6 +27,7 @@ class StationeryApp(ft.Container):
         self.user_id = user_id
         self.username = username
         self.role = role
+        self.current_page_obj = None          # <-- to keep a reference to the page object
         self._build_ui()
 
     def _build_ui(self):
@@ -176,11 +178,28 @@ class StationeryApp(ft.Container):
                 4: ReportsPage(self),
             }
 
-        content = page_map.get(index, ft.Text("Not implemented"))
-        if hasattr(content, 'build'):
-            content = content.build()
-        self.content_area.content = content
+        page_obj = page_map.get(index, None)               # the real page object
+        if page_obj is None:
+            self.content_area.content = ft.Text("Not implemented")
+            return
+
+        # Build the UI from the page object
+        built_content = page_obj.build()
+        self.content_area.content = built_content
+
+        # Store the page object for later refresh
+        self.current_page_obj = page_obj
+
+        # Trigger a delayed refresh for pages that support it
+        if hasattr(page_obj, 'refresh_items'):
+            self._page.run_task(self._delayed_refresh)
+
         self._page.update()
+
+    async def _delayed_refresh(self):
+        await asyncio.sleep(0.1)          # wait for the UI to settle
+        if self.current_page_obj and hasattr(self.current_page_obj, 'refresh_items'):
+            self.current_page_obj.refresh_items()
 
     def _on_bottom_bar_change(self, e):
         bottom_index = int(e.data) if e.data else 0

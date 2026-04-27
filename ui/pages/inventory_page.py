@@ -1,10 +1,9 @@
-# ui/pages/inventory_page.py
 import flet as ft
 import csv
 from datetime import datetime
 
 from config import currency_symbol, UserRole
-from database.connection import fetch_all, execute_query, fetch_one          # added fetch_one
+from database.connection import fetch_all, execute_query, fetch_one
 from database.repositories.item_repository import ItemRepository
 from ui.pages.base_page import BasePage
 from ui.components.dialogs import confirm_dialog
@@ -51,7 +50,6 @@ class InventoryPage(BasePage):
 
     def build(self) -> ft.Control:
         self._load_categories()
-        self.refresh_items()
 
         add_btn = ft.ElevatedButton(
             "+ Add Item",
@@ -73,6 +71,9 @@ class InventoryPage(BasePage):
             self.scrollable_table(self.item_table),
         ], expand=True, spacing=14, scroll=ft.ScrollMode.AUTO)
 
+    def did_mount(self):
+        self.refresh_items()
+
     def _load_categories(self):
         from config import get_setting, DEFAULT_CATEGORIES
         raw = get_setting("categories", DEFAULT_CATEGORIES)
@@ -81,52 +82,55 @@ class InventoryPage(BasePage):
         self.filter_category.value = "All"
 
     def refresh_items(self, e=None):
-        search = sanitize(self.inv_search.value or "")
-        cat = self.filter_category.value
-        items = self.item_repo.search(
-            name=search if search else None,
-            category=cat if cat != "All" else None
-        )
+        try:
+            search = sanitize(self.inv_search.value or "")
+            cat = self.filter_category.value
+            items = self.item_repo.search(
+                name=search if search else None,
+                category=cat if cat != "All" else None
+            )
 
-        sym = currency_symbol()
-        self.item_table.rows.clear()
-        for item in items:
-            is_low = item.is_low_stock
-            margin = item.margin_percent
+            sym = currency_symbol()
+            self.item_table.rows.clear()
+            for item in items:
+                is_low = item.is_low_stock
+                margin = item.margin_percent
 
-            actions = [
-                ft.IconButton(ft.Icons.EDIT, data=item.id, on_click=self._on_edit_click),
-                ft.IconButton(ft.Icons.DELETE, icon_color=ft.Colors.RED_400,
-                              data=item.id, on_click=self._on_delete_click),
-            ] if self.role == UserRole.ADMIN else [ft.Text("—")]
+                actions = [
+                    ft.IconButton(ft.Icons.EDIT, data=item.id, on_click=self._on_edit_click),
+                    ft.IconButton(ft.Icons.DELETE, icon_color=ft.Colors.RED_400,
+                                  data=item.id, on_click=self._on_delete_click),
+                ] if self.role == UserRole.ADMIN else [ft.Text("—")]
 
-            row_color = ft.Colors.RED_50 if is_low else None
-            self.item_table.rows.append(ft.DataRow(
-                color=row_color,
-                cells=[
-                    ft.DataCell(ft.Row([
-                        ft.Text(item.name, weight=ft.FontWeight.W_500),
-                        ft.Container(
-                            ft.Text("LOW", size=9, color=ft.Colors.WHITE),
-                            bgcolor=ft.Colors.RED_700,
-                            border_radius=4,
-                            padding=ft.padding.symmetric(horizontal=4, vertical=1),
-                            visible=is_low,
-                        ),
-                    ], spacing=5, tight=True)),
-                    ft.DataCell(ft.Text(item.category or "—")),
-                    ft.DataCell(ft.Text(str(item.quantity),
-                                        color=ft.Colors.RED_700 if is_low else None,
-                                        weight=ft.FontWeight.W_600 if is_low else None)),
-                    ft.DataCell(ft.Text(f"{sym}{item.price:.2f}")),
-                    ft.DataCell(ft.Text(f"{sym}{item.cost_price:.2f}", color=ft.Colors.GREY_600)),
-                    ft.DataCell(ft.Text(f"{margin:.0f}%",
-                                        color=ft.Colors.GREEN_700 if margin >= 20 else ft.Colors.ORANGE_700)),
-                    ft.DataCell(ft.Text(self._get_supplier_name(item.supplier_id), size=11)),
-                    ft.DataCell(ft.Row(actions, tight=True)),
-                ],
-            ))
-        self.page.update()
+                row_color = ft.Colors.RED_50 if is_low else None
+                self.item_table.rows.append(ft.DataRow(
+                    color=row_color,
+                    cells=[
+                        ft.DataCell(ft.Row([
+                            ft.Text(item.name, weight=ft.FontWeight.W_500),
+                            ft.Container(
+                                ft.Text("LOW", size=9, color=ft.Colors.WHITE),
+                                bgcolor=ft.Colors.RED_700,
+                                border_radius=4,
+                                padding=ft.padding.symmetric(horizontal=4, vertical=1),
+                                visible=is_low,
+                            ),
+                        ], spacing=5, tight=True)),
+                        ft.DataCell(ft.Text(item.category or "—")),
+                        ft.DataCell(ft.Text(str(item.quantity),
+                                            color=ft.Colors.RED_700 if is_low else None,
+                                            weight=ft.FontWeight.W_600 if is_low else None)),
+                        ft.DataCell(ft.Text(f"{sym}{item.price:.2f}")),
+                        ft.DataCell(ft.Text(f"{sym}{item.cost_price:.2f}", color=ft.Colors.GREY_600)),
+                        ft.DataCell(ft.Text(f"{margin:.0f}%",
+                                            color=ft.Colors.GREEN_700 if margin >= 20 else ft.Colors.ORANGE_700)),
+                        ft.DataCell(ft.Text(self._get_supplier_name(item.supplier_id), size=11)),
+                        ft.DataCell(ft.Row(actions, tight=True)),
+                    ],
+                ))
+            self.page.update()
+        except Exception as ex:
+            self.snack(f"Error loading items: {ex}", ft.Colors.RED_700)
 
     def _get_supplier_name(self, supplier_id):
         if not supplier_id:
@@ -144,7 +148,6 @@ class InventoryPage(BasePage):
         from config import get_setting, DEFAULT_CATEGORIES
         cats = [x.strip() for x in get_setting("categories", DEFAULT_CATEGORIES).split(",") if x.strip()]
         suppliers = fetch_all("SELECT id, name FROM suppliers ORDER BY name")
-
         return {
             "name": ft.TextField(label="Item Name *", expand=True,
                                  value=item_data.name if item_data else ""),
@@ -180,9 +183,7 @@ class InventoryPage(BasePage):
         if self.role != UserRole.ADMIN:
             self.snack("Admin access required", ft.Colors.RED_700)
             return
-
         fields = self._item_form_fields()
-
         def save(_):
             name = sanitize(fields["name"].value)
             if not name:
@@ -206,7 +207,6 @@ class InventoryPage(BasePage):
                 self.snack("Item added")
             except Exception as ex:
                 self.snack(f"Error: {ex}", ft.Colors.RED_700)
-
         dialog = ft.AlertDialog(
             title=ft.Text("Add New Item", size=17, weight=ft.FontWeight.BOLD),
             content=self._item_form_content(fields),
@@ -223,13 +223,10 @@ class InventoryPage(BasePage):
         if self.role != UserRole.ADMIN:
             self.snack("Admin access required", ft.Colors.RED_700)
             return
-
         item = self.item_repo.get_by_id(item_id)
         if not item:
             return
-
         fields = self._item_form_fields(item)
-
         def save(_):
             name = sanitize(fields["name"].value)
             if not name:
@@ -253,7 +250,6 @@ class InventoryPage(BasePage):
                 self.snack("Item updated")
             except Exception as ex:
                 self.snack(f"Error: {ex}", ft.Colors.RED_700)
-
         dialog = ft.AlertDialog(
             title=ft.Text(f"Edit — {item.name}", size=17, weight=ft.FontWeight.BOLD),
             content=self._item_form_content(fields),
@@ -270,13 +266,11 @@ class InventoryPage(BasePage):
         if self.role != UserRole.ADMIN:
             self.snack("Admin access required", ft.Colors.RED_700)
             return
-
         def confirm():
             self.item_repo.delete(item_id)
             log_audit(self.user_id, "DELETE_ITEM", f"Deleted #{item_id}")
             self.refresh_items()
             self.snack("Item deleted", ft.Colors.RED_700)
-
         dlg = confirm_dialog(
             self.page,
             "Confirm Delete",
