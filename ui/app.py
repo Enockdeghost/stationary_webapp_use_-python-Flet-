@@ -144,7 +144,8 @@ class StationeryApp(ft.Container):
         self.update_layout()
 
     def navigate_to(self, index: int):
-        self.nav_bar.selected_index = index if index < 5 else -1
+        if 0 <= index < len(self.nav_bar.destinations):
+            self.nav_bar.selected_index = index
         self._set_page_content(index)
         self._page.update()
 

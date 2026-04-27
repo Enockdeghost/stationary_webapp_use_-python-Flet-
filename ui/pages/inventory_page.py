@@ -1,15 +1,15 @@
+# ui/pages/inventory_page.py
 import flet as ft
 import csv
 from datetime import datetime
 
 from config import currency_symbol, UserRole
-from database.connection import fetch_all, execute_query
+from database.connection import fetch_all, execute_query, fetch_one          # added fetch_one
 from database.repositories.item_repository import ItemRepository
 from ui.pages.base_page import BasePage
 from ui.components.dialogs import confirm_dialog
 from security.validation import sanitize, safe_float, safe_int
 from utils.audit import log_audit
-from database.connection import fetch_all 
 
 
 class InventoryPage(BasePage):
@@ -23,14 +23,14 @@ class InventoryPage(BasePage):
             height=45,
             border_radius=8,
         )
-        self.inv_search.on_change = self.refresh_items      # assign after init
+        self.inv_search.on_change = self.refresh_items
 
         self.filter_category = ft.Dropdown(
             width=160,
             hint_text="All Categories",
             height=45,
         )
-        self.filter_category.on_change = self.refresh_items  # assign after init
+        self.filter_category.on_change = self.refresh_items
 
         self.item_table = ft.DataTable(
             columns=[
@@ -93,6 +93,7 @@ class InventoryPage(BasePage):
         for item in items:
             is_low = item.is_low_stock
             margin = item.margin_percent
+
             actions = [
                 ft.IconButton(ft.Icons.EDIT, data=item.id, on_click=self._on_edit_click),
                 ft.IconButton(ft.Icons.DELETE, icon_color=ft.Colors.RED_400,
@@ -126,7 +127,6 @@ class InventoryPage(BasePage):
                 ],
             ))
         self.page.update()
-
 
     def _get_supplier_name(self, supplier_id):
         if not supplier_id:

@@ -1,7 +1,7 @@
 import flet as ft
 import csv
 from datetime import datetime, timedelta
-
+from database.connection import fetch_all, execute_query, fetch_one          # added fetch_one
 from config import currency_symbol, UserRole
 from database.connection import fetch_all
 from ui.pages.base_page import BasePage

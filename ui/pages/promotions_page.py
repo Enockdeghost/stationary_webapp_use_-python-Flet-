@@ -2,7 +2,7 @@ import flet as ft
 from datetime import datetime
 
 from config import UserRole, currency_symbol
-from database.connection import fetch_all, execute_query
+from database.connection import fetch_all, execute_query, fetch_one          # added fetch_one
 from ui.pages.base_page import BasePage
 from security.validation import sanitize, safe_float
 from ui.components.dialogs import confirm_dialog

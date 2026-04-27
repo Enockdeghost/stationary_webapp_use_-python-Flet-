@@ -1,7 +1,7 @@
 from typing import List, Optional
 from database.repositories.base import BaseRepository
 from database.models import Item
-from database.connection import fetch_all   # ← added this import
+from database.connection import fetch_all   
 
 
 class ItemRepository(BaseRepository[Item]):

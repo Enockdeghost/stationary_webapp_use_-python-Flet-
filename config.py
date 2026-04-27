@@ -1,8 +1,11 @@
-
 import os
 import sqlite3
 
-DB_FILE = os.path.join("data", "stationery.db")
+# Ensure the data directory exists
+DATA_DIR = "data"
+os.makedirs(DATA_DIR, exist_ok=True)
+
+DB_FILE = os.path.join(DATA_DIR, "stationery.db")
 BACKUP_DIR = "backups"
 MOBILE_BREAKPOINT = 700
 MAX_LOGIN_ATTEMPTS = 5

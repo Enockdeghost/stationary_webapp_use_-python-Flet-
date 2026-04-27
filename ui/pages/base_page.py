@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 class BasePage:
     def __init__(self, app: "StationeryApp"):
         self.app = app
-        self.page = app._page          # ← now uses the app's stored page
+        self.page = app._page          # uses the app's stored page
         self.user_id = app.user_id
         self.username = app.username
         self.role = app.role
