@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 #!/home/staff/project/flet_web/venv/bin/python3
-=======
-#!/home/staff/project/hellen/starionary/stationary/venv/bin/python
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 # -*- coding: utf-8 -*-
 import re
 import sys

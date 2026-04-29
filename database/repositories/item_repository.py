@@ -1,7 +1,7 @@
 from typing import List, Optional
 from database.repositories.base import BaseRepository
 from database.models import Item
-from database.connection import fetch_all   
+from database.connection import fetch_all
 
 
 class ItemRepository(BaseRepository[Item]):
@@ -22,11 +22,7 @@ class ItemRepository(BaseRepository[Item]):
         return [Item.from_row(row) for row in rows]
 
     def get_low_stock(self) -> List[Item]:
-        query = """
-            SELECT * FROM items 
-            WHERE quantity <= low_stock_threshold 
-            ORDER BY (low_stock_threshold * 2 - quantity) DESC
-        """
+        query = "SELECT * FROM items WHERE quantity <= low_stock_threshold ORDER BY (low_stock_threshold * 2 - quantity) DESC"
         rows = fetch_all(query)
         return [Item.from_row(row) for row in rows]
 

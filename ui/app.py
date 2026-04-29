@@ -1,367 +1,345 @@
-import flet as ft
 import asyncio
+import flet as ft
 
-from config import get_setting, set_setting, MOBILE_BREAKPOINT, UserRole, currency_symbol
-from database.connection import fetch_one
-from ui.pages.login_page import LoginPage
-from ui.pages.dashboard_page import DashboardPage
-from ui.pages.inventory_page import InventoryPage
-from ui.pages.sales_page import SalesPage
-from ui.pages.sales_history_page import SalesHistoryPage
-from ui.pages.reports_page import ReportsPage
-from ui.pages.stock_adjustments_page import StockAdjustmentsPage
-from ui.pages.expenses_page import ExpensesPage
-from ui.pages.promotions_page import PromotionsPage
-from ui.pages.suppliers_page import SuppliersPage
-from ui.pages.purchasing_page import PurchasingPage
-from ui.pages.customers_page import CustomersPage
-from ui.pages.users_page import UsersPage
-from ui.pages.settings_page import SettingsPage
+from config import get_setting, set_setting, UserRole
 from utils.audit import log_audit
 
-<<<<<<< HEAD
-# ── Page registry ──────────────────────────────────────────────────────────────
-#  (label, icon, index, class, admin-only)
-PAGE_REGISTRY = [
-    ("Dashboard",  ft.Icons.DASHBOARD,              0,  DashboardPage,         False),
-    ("Inventory",  ft.Icons.INVENTORY_2,            1,  InventoryPage,         False),
-    ("Sales",      ft.Icons.POINT_OF_SALE,          2,  SalesPage,             False),
-    ("History",    ft.Icons.HISTORY,                3,  SalesHistoryPage,      False),
-    ("Reports",    ft.Icons.ANALYTICS,              4,  ReportsPage,           False),
-    ("Stock Adj.", ft.Icons.TUNE,                   5,  StockAdjustmentsPage,  True),
-    ("Expenses",   ft.Icons.ACCOUNT_BALANCE_WALLET, 6,  ExpensesPage,          True),
-    ("Promos",     ft.Icons.LOCAL_OFFER,            7,  PromotionsPage,        True),
-    ("Suppliers",  ft.Icons.LOCAL_SHIPPING,         8,  SuppliersPage,         True),
-    ("Purchasing", ft.Icons.SHOPPING_CART,          9,  PurchasingPage,        True),
-    ("Customers",  ft.Icons.GROUP,                  10, CustomersPage,         True),
-    ("Users",      ft.Icons.PEOPLE,                 11, UsersPage,             True),
-    ("Settings",   ft.Icons.SETTINGS,               12, SettingsPage,          True),
+from ui.pages.login_page       import LoginPage
+from ui.pages.dashboard_page   import DashboardPage
+from ui.pages.inventory_page   import InventoryPage
+from ui.pages.sales_page       import SalesPage
+from ui.pages.sales_history_page import SalesHistoryPage
+from ui.pages.reports_page     import ReportsPage
+from ui.pages.stock_adjustments_page import StockAdjustmentsPage
+from ui.pages.expenses_page    import ExpensesPage
+from ui.pages.promotions_page  import PromotionsPage
+from ui.pages.suppliers_page   import SuppliersPage
+from ui.pages.purchasing_page  import PurchasingPage
+from ui.pages.customers_page   import CustomersPage
+from ui.pages.users_page       import UsersPage
+from ui.pages.settings_page    import SettingsPage
+
+_PRIMARY        = ft.Colors.BLUE_800
+_PRIMARY_LIGHT  = ft.Colors.BLUE_600
+_ON_PRIMARY     = ft.Colors.WHITE
+_SURFACE_LIGHT  = "#FFFFFF"
+_TOPBAR_LIGHT   = "#1565C0"
+_TOPBAR_DARK    = "#0D1B2A"
+_NAV_BG_LIGHT   = "#FFFFFF"
+_NAV_BG_DARK    = "#1A1F2E"
+
+_BOTTOM_TABS = [
+    (ft.Icons.DASHBOARD_OUTLINED,   ft.Icons.DASHBOARD,        "Dashboard"),
+    (ft.Icons.INVENTORY_2_OUTLINED, ft.Icons.INVENTORY_2,      "Inventory"),
+    (ft.Icons.POINT_OF_SALE_OUTLINED, ft.Icons.POINT_OF_SALE,  "Sales"),
+    (ft.Icons.HISTORY,              ft.Icons.HISTORY,           "History"),
+    (ft.Icons.ANALYTICS_OUTLINED,   ft.Icons.ANALYTICS,        "Reports"),
 ]
 
-BOTTOM_NAV_COUNT = 5   # first N entries go into the bottom bar
+_PAGE_REGISTRY = [
+    ("Dashboard",   ft.Icons.DASHBOARD_OUTLINED,        0,  DashboardPage,        False),
+    ("Inventory",   ft.Icons.INVENTORY_2_OUTLINED,      1,  InventoryPage,        False),
+    ("Sales",       ft.Icons.POINT_OF_SALE_OUTLINED,    2,  SalesPage,            False),
+    ("History",     ft.Icons.HISTORY,                   3,  SalesHistoryPage,     False),
+    ("Reports",     ft.Icons.ANALYTICS_OUTLINED,        4,  ReportsPage,          False),
+    ("Stock Adj.",  ft.Icons.TUNE,                      5,  StockAdjustmentsPage, True),
+    ("Expenses",    ft.Icons.ACCOUNT_BALANCE_WALLET_OUTLINED, 6, ExpensesPage,    True),
+    ("Promotions",  ft.Icons.LOCAL_OFFER_OUTLINED,      7,  PromotionsPage,       True),
+    ("Suppliers",   ft.Icons.LOCAL_SHIPPING_OUTLINED,   8,  SuppliersPage,        True),
+    ("Purchasing",  ft.Icons.SHOPPING_CART_OUTLINED,    9,  PurchasingPage,       True),
+    ("Customers",   ft.Icons.GROUP_OUTLINED,            10, CustomersPage,        True),
+    ("Users",       ft.Icons.PEOPLE_OUTLINED,           11, UsersPage,            True),
+    ("Settings",    ft.Icons.SETTINGS_OUTLINED,         12, SettingsPage,         True),
+]
+_BOTTOM_COUNT = 5
 
-=======
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 
-class StationeryApp(ft.Container):
+def _apply_theme(page: ft.Page, dark: bool):
+    seed = ft.Colors.BLUE_800
+    nav_theme = ft.NavigationBarTheme(
+        bgcolor          = _NAV_BG_DARK  if dark else _NAV_BG_LIGHT,
+        elevation        = 12,
+        indicator_color  = ft.Colors.with_opacity(0.20, ft.Colors.WHITE)
+                           if dark else ft.Colors.with_opacity(0.15, _PRIMARY),
+        indicator_shape  = ft.StadiumBorder(),
+        label_behavior   = ft.NavigationBarLabelBehavior.ALWAYS_SHOW,
+        overlay_color    = {
+            ft.ControlState.PRESSED: ft.Colors.with_opacity(0.12, ft.Colors.WHITE
+                                     if dark else _PRIMARY),
+            ft.ControlState.HOVERED: ft.Colors.with_opacity(0.06, ft.Colors.WHITE
+                                     if dark else _PRIMARY),
+        },
+        label_text_style = {
+            ft.ControlState.SELECTED: ft.TextStyle(
+                weight=ft.FontWeight.W_700, size=11,
+                color=ft.Colors.WHITE if dark else _PRIMARY,
+            ),
+            ft.ControlState.DEFAULT: ft.TextStyle(
+                weight=ft.FontWeight.W_500, size=11,
+            ),
+        },
+    )
+
+    theme = ft.Theme(
+        color_scheme_seed    = seed,
+        use_material3        = True,
+        navigation_bar_theme = nav_theme,
+        visual_density       = ft.VisualDensity.COMFORTABLE,
+    )
+    dark_theme = ft.Theme(
+        color_scheme_seed    = seed,
+        use_material3        = True,
+        navigation_bar_theme = nav_theme,
+        visual_density       = ft.VisualDensity.COMFORTABLE,
+    )
+
+    page.theme       = theme
+    page.dark_theme  = dark_theme
+    page.theme_mode  = ft.ThemeMode.DARK if dark else ft.ThemeMode.LIGHT
+
+
+class StationeryApp:
     def __init__(self, page: ft.Page, user_id: int, username: str, role: str):
-        super().__init__(expand=True)
-        self._page = page
-        self.user_id = user_id
+        self._page    = page
+        self.user_id  = user_id
         self.username = username
-        self.role = role
-<<<<<<< HEAD
-        self.current_page_obj = None
+        self.role     = role
         self._active_index = 0
-        self._build_ui()
+        self._is_dark = get_setting("dark_mode", "false") == "true"
 
-    # ── build ──────────────────────────────────────────────────────────────────
-
-    def _build_ui(self):
-        is_admin = (self.role == UserRole.ADMIN)
-        visible_pages = [p for p in PAGE_REGISTRY if not p[4] or is_admin]
-
-        # ── hamburger menu (all accessible pages with icons) ─────────────────
-        menu_items = []
-        for label, icon, index, _, admin_only in visible_pages:
-            menu_items.append(
-                ft.PopupMenuItem(
-                    content=ft.Row(
-                        [
-                            ft.Icon(icon, size=16, color=ft.Colors.BLUE_700),
-                            ft.Text(label, size=13),
-                        ],
-                        spacing=10,
-                    ),
-                    on_click=lambda e, idx=index: self.navigate_to(idx),
-                )
-            )
-            # divider before admin section
-            if index == BOTTOM_NAV_COUNT - 1 and is_admin:
-                menu_items.append(ft.PopupMenuItem())   # separator
-
-        # ── bottom nav bar (first 5 pages only) ──────────────────────────────
-        bottom_pages = [p for p in PAGE_REGISTRY if p[2] < BOTTOM_NAV_COUNT]
-        self.nav_bar = ft.NavigationBar(
-            selected_index=0,
-            bgcolor=ft.Colors.SURFACE,
-            elevation=8,
-            destinations=[
-                ft.NavigationBarDestination(icon=icon, label=label)
-                for label, icon, *_ in bottom_pages
-=======
-        self.current_page_obj = None          # <-- to keep a reference to the page object
+        _apply_theme(page, self._is_dark)
         self._build_ui()
 
     def _build_ui(self):
-        is_admin = (self.role == UserRole.ADMIN)
+        is_admin = self.role == UserRole.ADMIN
 
-        full_dest_pairs = [
-            ("Dashboard",  ft.Icons.DASHBOARD,       0),
-            ("Inventory",  ft.Icons.INVENTORY_2,     1),
-            ("Sales",      ft.Icons.POINT_OF_SALE,   2),
-            ("History",    ft.Icons.HISTORY,         3),
-            ("Reports",    ft.Icons.ANALYTICS,       4),
-        ]
-        if is_admin:
-            full_dest_pairs += [
-                ("Stock Adj.",    ft.Icons.TUNE,                   5),
-                ("Expenses",      ft.Icons.ACCOUNT_BALANCE_WALLET, 6),
-                ("Promos",        ft.Icons.LOCAL_OFFER,            7),
-                ("Suppliers",     ft.Icons.LOCAL_SHIPPING,         8),
-                ("Purchasing",    ft.Icons.SHOPPING_CART,          9),
-                ("Customers",     ft.Icons.GROUP,                  10),
-                ("Users",         ft.Icons.PEOPLE,                 11),
-                ("Settings",      ft.Icons.SETTINGS,               12),
-            ]
+        menu_items: list[ft.PopupMenuItem] = []
+        common_pages  = [p for p in _PAGE_REGISTRY if not p[4]]
+        admin_pages   = [p for p in _PAGE_REGISTRY if p[4]] if is_admin else []
 
-        bottom_pairs = [
-            ("Dashboard", ft.Icons.DASHBOARD),
-            ("Inventory", ft.Icons.INVENTORY_2),
-            ("Sales",     ft.Icons.POINT_OF_SALE),
-            ("History",   ft.Icons.HISTORY),
-            ("Reports",   ft.Icons.ANALYTICS),
-        ]
+        for label, icon, index, _, _ in common_pages:
+            menu_items.append(self._menu_item(label, icon, index))
 
-        menu_items = []
-        for label, icon, index in full_dest_pairs:
-            menu_items.append(
-                ft.PopupMenuItem(
-                    content=ft.Text(label),
-                    icon=icon,
-                    on_click=lambda e, idx=index: self.navigate_to(idx),
-                )
-            )
+        if admin_pages:
+            menu_items.append(ft.PopupMenuItem())   # divider
+            menu_items.append(ft.PopupMenuItem(
+                content=ft.Text("ADMIN", size=10,
+                                weight=ft.FontWeight.W_700,
+                                color=ft.Colors.with_opacity(0.5, ft.Colors.WHITE)),
+            ))
+            for label, icon, index, _, _ in admin_pages:
+                menu_items.append(self._menu_item(label, icon, index))
 
-        self.nav_bar = ft.NavigationBar(
-            selected_index=0,
-            bgcolor=ft.Colors.SURFACE,
-            destinations=[
-                ft.NavigationBarDestination(icon=icon, label=label)
-                for label, icon in bottom_pairs
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
-            ],
-            on_change=self._on_bottom_bar_change,
-        )
-
-        self.dark_mode_switch = ft.Switch(
-            value=get_setting("dark_mode", "false") == "true",
-            on_change=self.toggle_dark_mode,
-            label="Dark",
-        )
-
-<<<<<<< HEAD
-        # ── hamburger button ──────────────────────────────────────────────────
-        self.hamburger_btn = ft.PopupMenuButton(
+        self._hamburger = ft.PopupMenuButton(
             icon=ft.Icons.MENU_ROUNDED,
+            icon_color=ft.Colors.WHITE,
             items=menu_items,
             tooltip="Navigation menu",
+            bgcolor=_TOPBAR_DARK if self._is_dark else _TOPBAR_LIGHT,
+            elevation=8,
+            shape=ft.RoundedRectangleBorder(radius=10),
         )
 
-        # ── top bar ───────────────────────────────────────────────────────────
-        store_name = get_setting("store_name", "Uptown Stationery")
-        self._store_name_text = ft.Text(
-            store_name, size=15, weight=ft.FontWeight.BOLD,
-            color=ft.Colors.BLUE_700,
-            overflow=ft.TextOverflow.ELLIPSIS,
+        self._theme_btn = ft.IconButton(
+            icon=ft.Icons.DARK_MODE_OUTLINED if not self._is_dark
+                 else ft.Icons.LIGHT_MODE_OUTLINED,
+            icon_color=ft.Colors.WHITE,
+            icon_size=20,
+            tooltip="Toggle dark mode",
+            on_click=self._toggle_dark_mode,
+            style=ft.ButtonStyle(
+                overlay_color={ft.ControlState.HOVERED:
+                               ft.Colors.with_opacity(0.15, ft.Colors.WHITE)},
+            ),
         )
 
-        top_left = ft.Row(
-            [self.hamburger_btn, self._store_name_text],
-            spacing=4,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        avatar = ft.Container(
+            content=ft.Text(
+                self.username[0].upper(), size=14,
+                weight=ft.FontWeight.BOLD, color=_TOPBAR_LIGHT,
+            ),
+            width=34, height=34,
+            bgcolor=ft.Colors.WHITE,
+            border_radius=17,
+            alignment=ft.Alignment(0, 0),
         )
 
-        top_right = ft.Row(
+        role_badge = ft.Container(
+            ft.Text(self.role.upper(), size=9,
+                    weight=ft.FontWeight.BOLD,
+                    color=ft.Colors.WHITE),
+            bgcolor=ft.Colors.GREEN_700 if self.role == UserRole.ADMIN
+                    else ft.Colors.ORANGE_700,
+            border_radius=4,
+            padding=ft.padding.symmetric(horizontal=5, vertical=2),
+        )
+
+        user_info = ft.Row(
             [
-                self.dark_mode_switch,
-                ft.VerticalDivider(width=1, color=ft.Colors.GREY_300),
-                ft.CircleAvatar(
-                    content=ft.Text(
-                        self.username[0].upper(), size=13,
-                        weight=ft.FontWeight.BOLD,
-                        color=ft.Colors.WHITE,
-                    ),
-                    bgcolor=ft.Colors.BLUE_700,
-                    radius=16,
-                ),
+                avatar,
                 ft.Column(
                     [
                         ft.Text(self.username, size=12,
-                                weight=ft.FontWeight.W_600),
-                        ft.Text(self.role, size=10,
-                                color=ft.Colors.GREY_500),
+                                weight=ft.FontWeight.W_600,
+                                color=ft.Colors.WHITE),
+                        role_badge,
+                    ],
+                    spacing=2,
+                    tight=True,
+                ),
+            ],
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        logout_btn = ft.IconButton(
+            icon=ft.Icons.LOGOUT_ROUNDED,
+            icon_color=ft.Colors.with_opacity(0.85, ft.Colors.WHITE),
+            icon_size=20,
+            tooltip="Logout",
+            on_click=self._logout,
+            style=ft.ButtonStyle(
+                overlay_color={
+                    ft.ControlState.HOVERED:
+                        ft.Colors.with_opacity(0.15, ft.Colors.WHITE),
+                },
+            ),
+        )
+
+        store_name = get_setting("store_name", "Uptown Stationery")
+        brand = ft.Row(
+            [
+                ft.Container(
+                    ft.Icon(ft.Icons.STOREFRONT_ROUNDED,
+                            color=ft.Colors.WHITE, size=20),
+                    bgcolor=ft.Colors.with_opacity(0.18, ft.Colors.WHITE),
+                    border_radius=8, padding=6,
+                ),
+                ft.Column(
+                    [
+                        ft.Text(store_name, size=14,
+                                weight=ft.FontWeight.BOLD,
+                                color=ft.Colors.WHITE),
+                        ft.Text("POS System", size=10,
+                                color=ft.Colors.with_opacity(0.7, ft.Colors.WHITE)),
                     ],
                     spacing=0,
                     tight=True,
                 ),
-                ft.IconButton(
-                    icon=ft.Icons.LOGOUT_ROUNDED,
-                    tooltip="Logout",
-                    on_click=self.logout,
-                    icon_color=ft.Colors.RED_400,
-                    icon_size=20,
-                    style=ft.ButtonStyle(
-                        overlay_color={
-                            ft.ControlState.HOVERED: ft.Colors.RED_50,
-                        }
-                    ),
-                ),
             ],
-            spacing=6,
+            spacing=10,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
-        self.top_bar = ft.Container(
+        self._top_bar = ft.Container(
             content=ft.Row(
-                [top_left, top_right],
+                [
+                    ft.Row([self._hamburger, brand],
+                           spacing=8,
+                           vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                    ft.Row([self._theme_btn,
+                            ft.VerticalDivider(
+                                width=1,
+                                color=ft.Colors.with_opacity(0.3, ft.Colors.WHITE),
+                            ),
+                            user_info,
+                            logout_btn],
+                           spacing=8,
+                           vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            padding=ft.padding.symmetric(horizontal=14, vertical=6),
-            # FIX: use lowercase ft.border.only (ft.Border.only was a bug)
-            border=ft.border.only(
-                bottom=ft.BorderSide(1, ft.Colors.GREY_300)
+            gradient=ft.LinearGradient(
+                begin=ft.Alignment(-1, 0),
+                end=ft.Alignment(1, 0),
+                colors=[_TOPBAR_LIGHT, "#1976D2"],
+            ),
+            padding=ft.padding.symmetric(horizontal=16, vertical=10),
+            shadow=ft.BoxShadow(
+                spread_radius=0, blur_radius=8,
+                color=ft.Colors.with_opacity(0.25, ft.Colors.BLACK),
+                offset=ft.Offset(0, 2),
             ),
         )
 
-        # ── scrollable content area ───────────────────────────────────────────
-        self.content_area = ft.Container(
-            expand=True,
-            padding=ft.padding.all(12),
-            content=self._loading_spinner(),
-        )
-
-        # ── root layout ───────────────────────────────────────────────────────
-        self.content = ft.Column(
-            controls=[
-                self.top_bar,
-                self.content_area,
-                self.nav_bar,
+        self._nav_bar = ft.NavigationBar(
+            selected_index = 0,
+            destinations   = [
+                ft.NavigationBarDestination(
+                    icon          = icon_off,
+                    selected_icon = icon_on,
+                    label         = label,
+                )
+                for icon_off, icon_on, label in _BOTTOM_TABS
             ],
-            expand=True,
-            spacing=0,
-        )
-=======
-        self.hamburger_btn = ft.PopupMenuButton(
-            icon=ft.Icons.MENU,
-            items=menu_items,
+            on_change=self._on_bottom_change,
         )
 
-        top_bar_content = ft.Row([
-            self.hamburger_btn,
-            ft.Text(get_setting("store_name", "Uptown Stationery"),
-                    size=14, weight=ft.FontWeight.W_600),
-            ft.Row([
-                self.dark_mode_switch,
-                ft.CircleAvatar(
-                    content=ft.Text(self.username[0].upper(), size=13),
-                    bgcolor=ft.Colors.BLUE_700, radius=15,
-                ),
-                ft.Column([
-                    ft.Text(f"{self.username} ({self.role})", size=12,
-                            weight=ft.FontWeight.W_600),
-                    ft.Text(get_setting("store_name", "Uptown Stationery"),
-                            size=10, color=ft.Colors.GREY_500),
-                ], spacing=0, tight=True),
-                ft.IconButton(ft.Icons.LOGOUT, tooltip="Logout",
-                              on_click=self.logout),
-            ], spacing=6),
-        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-
-        self.top_bar = ft.Container(
-            content=top_bar_content,
-            padding=ft.padding.symmetric(horizontal=16, vertical=8),
-            border=ft.Border.only(bottom=ft.BorderSide(1, ft.Colors.GREY_300)),
+        self._content = ft.Container(
+            expand  = True,
+            padding = ft.padding.all(14),
+            content = ft.Column(
+                [ft.ProgressRing(width=30, height=30, stroke_width=3)],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                expand=True,
+            ),
         )
 
-        self.content_area = ft.Container(expand=True, padding=16, content=ft.Text("Loading…"))
-        self.content = ft.Column([
-            self.top_bar,
-            self.content_area,
-            self.nav_bar,
-        ], expand=True, spacing=0)
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
-
-        self._page.on_resize = self.on_page_resize
-        self.navigate_to(0)
-
-<<<<<<< HEAD
-    # ── helpers ────────────────────────────────────────────────────────────────
-
-    @staticmethod
-    def _loading_spinner() -> ft.Control:
-        return ft.Column(
-            [ft.ProgressRing(width=32, height=32, stroke_width=3)],
-            alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            expand=True,
+        self.content = ft.Column(
+            [self._top_bar, self._content, self._nav_bar],
+            expand  = True,
+            spacing = 0,
         )
 
-    @property
-    def _is_mobile(self) -> bool:
-        return bool(
-            self._page and self._page.width
-            and self._page.width < MOBILE_BREAKPOINT
+        self._page.on_resize = lambda e: self._page.update()
+        self._navigate(0)
+
+    def _menu_item(self, label: str, icon, index: int) -> ft.PopupMenuItem:
+        return ft.PopupMenuItem(
+            content=ft.Row(
+                [
+                    ft.Container(
+                        ft.Icon(icon, size=15, color=ft.Colors.WHITE),
+                        bgcolor=ft.Colors.with_opacity(0.15, ft.Colors.WHITE),
+                        border_radius=6, padding=4,
+                    ),
+                    ft.Text(label, size=13, color=ft.Colors.WHITE,
+                            weight=ft.FontWeight.W_500),
+                ],
+                spacing=10,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            on_click=lambda e, idx=index: self._navigate(idx),
         )
-=======
-    @property
-    def _is_mobile(self) -> bool:
-        return bool(self._page and self._page.width and self._page.width < MOBILE_BREAKPOINT)
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 
-    def update_layout(self):
-        if not self._page:
-            return
-        self.content.controls = [
-            self.top_bar,
-            self.content_area,
-            self.nav_bar,
-        ]
-        self._page.update()
-
-    def on_page_resize(self, e):
-        self.update_layout()
-
-<<<<<<< HEAD
-    # ── navigation ─────────────────────────────────────────────────────────────
-
-    def navigate_to(self, index: int):
+    def _navigate(self, index: int):
         self._active_index = index
-
-        # FIX: only update bottom bar for the 5 tabs it actually has.
-        # Setting selected_index to 5-12 caused blank / broken pages.
-        if 0 <= index < BOTTOM_NAV_COUNT:
-            self.nav_bar.selected_index = index
+        if 0 <= index < _BOTTOM_COUNT:
+            self._nav_bar.selected_index = index
         else:
-            self.nav_bar.selected_index = None   # deselect when on admin page
+            self._nav_bar.selected_index = None
+        self._load_page(index)
 
-        self._set_page_content(index)
-        self._page.update()
+    def _load_page(self, index: int):
+        is_admin = self.role == UserRole.ADMIN
 
-    def _make_page(self, index: int):
-        """Instantiate only the page being navigated to (lazy, not all at once)."""
-        is_admin = (self.role == UserRole.ADMIN)
-        for label, icon, idx, cls, admin_only in PAGE_REGISTRY:
+        cls = None
+        for _, _, idx, page_cls, admin_only in _PAGE_REGISTRY:
             if idx == index:
                 if admin_only and not is_admin:
-                    return None
-                return cls(self)
-        return None
+                    break
+                cls = page_cls
+                break
 
-    def _set_page_content(self, index: int):
-        # Show spinner immediately so content area is never blank
-        self.content_area.content = self._loading_spinner()
-        self._page.update()
-
-        page_obj = self._make_page(index)
-        if page_obj is None:
-            self.content_area.content = ft.Column(
+        if cls is None:
+            self._content.content = ft.Column(
                 [
-                    ft.Icon(ft.Icons.LOCK_OUTLINE, size=48,
+                    ft.Icon(ft.Icons.LOCK_OUTLINE, size=52,
                             color=ft.Colors.GREY_400),
-                    ft.Text("Page not available", color=ft.Colors.GREY_500,
-                            size=16),
+                    ft.Text("Page not available",
+                            size=16, color=ft.Colors.GREY_500),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -370,157 +348,92 @@ class StationeryApp(ft.Container):
             self._page.update()
             return
 
-        built_content = page_obj.build()
-        self.content_area.content = built_content
-        self.current_page_obj = page_obj
+        self._content.content = ft.Column(
+            [ft.ProgressRing(width=30, height=30, stroke_width=3)],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            expand=True,
+        )
+        self._page.update()
+
+        page_obj = cls(self)
+        self._content.content = page_obj.build()
+        self._page.update()
 
         if hasattr(page_obj, "refresh_items"):
-=======
-    def navigate_to(self, index: int):
-        if 0 <= index < len(self.nav_bar.destinations):
-            self.nav_bar.selected_index = index
-        self._set_page_content(index)
+            async def _later():
+                await asyncio.sleep(0.08)
+                page_obj.refresh_items()
+            self._page.run_task(_later)
+
+    def _on_bottom_change(self, e):
+        self._navigate(int(e.data) if e.data else 0)
+
+    def _toggle_dark_mode(self, e):
+        self._is_dark = not self._is_dark
+        set_setting("dark_mode", "true" if self._is_dark else "false")
+
+        self._theme_btn.icon = (
+            ft.Icons.LIGHT_MODE_OUTLINED if self._is_dark
+            else ft.Icons.DARK_MODE_OUTLINED
+        )
+
+        self._top_bar.gradient = ft.LinearGradient(
+            begin=ft.Alignment(-1, 0),
+            end=ft.Alignment(1, 0),
+            colors=(
+                [_TOPBAR_DARK, "#1A2744"]
+                if self._is_dark else [_TOPBAR_LIGHT, "#1976D2"]
+            ),
+        )
+
+        _apply_theme(self._page, self._is_dark)
         self._page.update()
-
-    def _set_page_content(self, index: int):
-        is_admin = (self.role == UserRole.ADMIN)
-        if is_admin:
-            page_map = {
-                0:  DashboardPage(self),
-                1:  InventoryPage(self),
-                2:  SalesPage(self),
-                3:  SalesHistoryPage(self),
-                4:  ReportsPage(self),
-                5:  StockAdjustmentsPage(self),
-                6:  ExpensesPage(self),
-                7:  PromotionsPage(self),
-                8:  SuppliersPage(self),
-                9:  PurchasingPage(self),
-                10: CustomersPage(self),
-                11: UsersPage(self),
-                12: SettingsPage(self),
-            }
-        else:
-            page_map = {
-                0: DashboardPage(self),
-                1: InventoryPage(self),
-                2: SalesPage(self),
-                3: SalesHistoryPage(self),
-                4: ReportsPage(self),
-            }
-
-        page_obj = page_map.get(index, None)               # the real page object
-        if page_obj is None:
-            self.content_area.content = ft.Text("Not implemented")
-            return
-
-        # Build the UI from the page object
-        built_content = page_obj.build()
-        self.content_area.content = built_content
-
-        # Store the page object for later refresh
-        self.current_page_obj = page_obj
-
-        # Trigger a delayed refresh for pages that support it
-        if hasattr(page_obj, 'refresh_items'):
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
-            self._page.run_task(self._delayed_refresh)
-
-        self._page.update()
-
-    async def _delayed_refresh(self):
-<<<<<<< HEAD
-        await asyncio.sleep(0.1)
-        if self.current_page_obj and hasattr(self.current_page_obj, "refresh_items"):
-=======
-        await asyncio.sleep(0.1)          # wait for the UI to settle
-        if self.current_page_obj and hasattr(self.current_page_obj, 'refresh_items'):
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
-            self.current_page_obj.refresh_items()
-
-    def _on_bottom_bar_change(self, e):
-        bottom_index = int(e.data) if e.data else 0
-        self.navigate_to(bottom_index)
-
-<<<<<<< HEAD
-    # ── ui helpers ─────────────────────────────────────────────────────────────
 
     def snack(self, msg: str, color=ft.Colors.GREEN_700):
         if not self._page:
             return
         self._page.snack_bar = ft.SnackBar(
-            ft.Text(msg, color=ft.Colors.WHITE),
+            content=ft.Row(
+                [
+                    ft.Icon(
+                        ft.Icons.CHECK_CIRCLE_OUTLINE
+                        if color == ft.Colors.GREEN_700
+                        else ft.Icons.ERROR_OUTLINE,
+                        color=ft.Colors.WHITE, size=18,
+                    ),
+                    ft.Text(msg, color=ft.Colors.WHITE, expand=True),
+                ],
+                spacing=10,
+            ),
             bgcolor=color,
             duration=3000,
+            show_close_icon=True,
+            close_icon_color=ft.Colors.WHITE,
         )
-=======
-    def snack(self, msg: str, color=ft.Colors.GREEN_700):
-        if not self._page:
-            return
-        self._page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=color)
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
         self._page.snack_bar.open = True
         self._page.update()
 
-    def toggle_dark_mode(self, e):
-        is_dark = e.control.value
-        set_setting("dark_mode", "true" if is_dark else "false")
-<<<<<<< HEAD
-        self._page.theme_mode = (
-            ft.ThemeMode.DARK if is_dark else ft.ThemeMode.LIGHT
-        )
-        # Update top-bar border to match new theme
-        self.top_bar.border = ft.border.only(
-            bottom=ft.BorderSide(
-                1, ft.Colors.GREY_700 if is_dark else ft.Colors.GREY_300
-            )
-        )
-=======
-        self._page.theme_mode = ft.ThemeMode.DARK if is_dark else ft.ThemeMode.LIGHT
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
-        self._page.update()
-
-    def logout(self, e):
+    def _logout(self, e):
         log_audit(self.user_id, "LOGOUT", f"User {self.username} logged out")
         self._page.on_resize = None
         self._page.clean()
-<<<<<<< HEAD
-        self._page.add(
-            LoginPage(
-                lambda uid, uname, role: (
-                    self._page.clean(),
-                    self._page.add(StationeryApp(self._page, uid, uname, role)),
-                    self._page.update(),
-                )
-            )
-        )
-=======
-        self._page.add(LoginPage(lambda uid, uname, role: (
-            self._page.clean(),
-            self._page.add(StationeryApp(self._page, uid, uname, role)),
-            self._page.update(),
+        self._page.add(LoginPage(lambda uid, uname, role: _launch(
+            self._page, uid, uname, role
         )))
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
         self._page.update()
 
     def open_purchase_order_dialog(self, prefill=None):
-        purchasing = PurchasingPage(self)
-        purchasing._open_po_dialog(prefill=prefill)
+        PurchasingPage(self)._open_po_dialog(prefill=prefill)
+
+
+def _launch(page: ft.Page, uid: int, uname: str, role: str):
+    page.clean()
+    app = StationeryApp(page, uid, uname, role)
+    page.add(app.content)
+    page.update()
 
 
 def build_app(page: ft.Page) -> ft.Control:
-<<<<<<< HEAD
-    return LoginPage(
-        lambda uid, uname, role: (
-            page.clean(),
-            page.add(StationeryApp(page, uid, uname, role)),
-            page.update(),
-        )
-    )
-=======
-    return LoginPage(lambda uid, uname, role: (
-        page.clean(),
-        page.add(StationeryApp(page, uid, uname, role)),
-        page.update(),
-    ))
->>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
+    _apply_theme(page, get_setting("dark_mode", "false") == "true")
+    return LoginPage(lambda uid, uname, role: _launch(page, uid, uname, role))
