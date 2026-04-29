@@ -22,14 +22,22 @@ class InventoryPage(BasePage):
             height=45,
             border_radius=8,
         )
+<<<<<<< HEAD
         self.inv_search.on_change = self.refresh_items          # ← after init
+=======
+        self.inv_search.on_change = self.refresh_items
+>>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 
         self.filter_category = ft.Dropdown(
             width=160,
             hint_text="All Categories",
             height=45,
         )
+<<<<<<< HEAD
         self.filter_category.on_change = self.refresh_items     # ← after init
+=======
+        self.filter_category.on_change = self.refresh_items
+>>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 
         self.item_table = ft.DataTable(
             columns=[
@@ -42,7 +50,11 @@ class InventoryPage(BasePage):
                 ft.DataColumn(ft.Text("Supplier")),
                 ft.DataColumn(ft.Text("Actions")),
             ],
+<<<<<<< HEAD
             border=ft.border.all(1, ft.Colors.GREY_300),
+=======
+            border=ft.Border.all(1, ft.Colors.GREY_300),
+>>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
             border_radius=8,
             data_row_max_height=50,
             column_spacing=14,
@@ -68,6 +80,7 @@ class InventoryPage(BasePage):
             ft.Text("Inventory", size=24, weight=ft.FontWeight.BOLD),
             ft.Row([self.inv_search, self.filter_category, add_btn, export_btn],
                    spacing=10, wrap=True),
+<<<<<<< HEAD
             ft.Container(
                 content=ft.Row([self.item_table], scroll=ft.ScrollMode.AUTO),
                 expand=True,
@@ -75,6 +88,13 @@ class InventoryPage(BasePage):
                 border_radius=10,
             ),
         ], expand=True, spacing=14)
+=======
+            self.scrollable_table(self.item_table),
+        ], expand=True, spacing=14, scroll=ft.ScrollMode.AUTO)
+
+    def did_mount(self):
+        self.refresh_items()
+>>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 
     def _load_categories(self):
         from config import get_setting, DEFAULT_CATEGORIES

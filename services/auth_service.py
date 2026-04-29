@@ -13,8 +13,11 @@ from utils.audit import log_audit
 from config import MAX_LOGIN_ATTEMPTS, LOCKOUT_SECONDS
 from security.auth import _login_attempts
 import time
+<<<<<<< HEAD
 from security.validation import validate_password_strength
 from security.auth import hash_password
+=======
+>>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 
 
 class AuthService:
@@ -55,7 +58,12 @@ class AuthService:
             return None, None, None, f"Invalid username or password. {attempts_left} attempt(s) remaining."
 
     def change_password(self, user_id: int, old_password: str, new_password: str) -> Tuple[bool, str]:
+<<<<<<< HEAD
       
+=======
+        from security.validation import validate_password_strength
+        from security.auth import hash_password
+>>>>>>> a43d19b144b88052d69b9ab13ab7e2ac5717a97d
 
         user = self.user_repo.get_by_id(user_id)
         if not user:
