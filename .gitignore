@@ -3,6 +3,4 @@ __pycache__/
 backup/
 .stationary_data.json
 .readme.md
-.env
-.backup/
-.stationery_data.json
+.venv
